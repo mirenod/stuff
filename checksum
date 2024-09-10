@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Variables
+ARTIFACTORY_URL="https://your-artifactory-instance/artifactory"
+REPO="your-repo"
+FILE_PATH="path/to/your/file"
+FILE_NAME=$(basename "$FILE_PATH")
+
+# Calculate checksums
+MD5_CHECKSUM=$(md5sum "$FILE_PATH" | awk '{ print $1 }')
+SHA1_CHECKSUM=$(sha1sum "$FILE_PATH" | awk '{ print $1 }')
+SHA256_CHECKSUM=$(sha256sum "$FILE_PATH" | awk '{ print $1 }')
+
+# Upload file with checksums
+curl -u "your-username:your-password" \
+     -T "$FILE_PATH" \
+     "$ARTIFACTORY_URL/$REPO/$FILE_NAME" \
+     -H "X-Checksum-Md5: $MD5_CHECKSUM" \
+     -H "X-Checksum-Sha1: $SHA1_CHECKSUM" \
+     -H "X-Checksum-Sha256: $SHA256_CHECKSUM"
