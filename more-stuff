@@ -1,65 +1,13 @@
-#!/bin/bash
+    - name: Reload systemd manager configuration
+      ansible.builtin.systemd:
+        daemon_reload: yes
 
-# This script logs into Vault, checks if the token will expire in less than a week, and renews the token if necessary.
-# If a token already exists, it skips the login step.
-# It also copies the token to each user's home folder with the right permissions and updates the /etc/environment file with an environment variable containing the token.
+    - name: Enable my_service.timer
+      ansible.builtin.systemd:
+        name: my_service.timer
+        enabled: yes
 
-# Function to copy the token to each user's home folder
-copy_token_to_users() {
-  for user_home in /home/*; do
-    if [ -d "$user_home" ]; then
-      cp /root/.vault-token "$user_home/.vault-token"
-      chown $(basename "$user_home"):$(basename "$user_home") "$user_home/.vault-token"
-      chmod 600 "$user_home/.vault-token"
-    fi
-  done
-}
-
-# Function to update /etc/environment with the token
-update_environment_file() {
-  token=$(cat /root/.vault-token)
-  if grep -q "VAULT_TOKEN" /etc/environment; then
-    # Update the existing token
-    sed -i "s/^VAULT_TOKEN=.*/VAULT_TOKEN=$token/" /etc/environment
-  else
-    # Add the new token
-    echo "VAULT_TOKEN=$token" >> /etc/environment
-  fi
-}
-
-# Check if a token already exists
-if vault token lookup &> /dev/null; then
-  echo "Token already exists."
-else
-  # Vault login
-  vault login -method=userpass username=<your-username> password=<your-password>
-fi
-
-# Get the token expiration time
-token_expiration=$(vault token lookup -format=json | jq -r '.data.expire_time')
-
-# Convert token expiration time to seconds since epoch
-token_expiration_epoch=$(date -d "$token_expiration" +%s)
-
-# Get the current time in seconds since epoch
-current_time_epoch=$(date +%s)
-
-# Calculate the difference in seconds
-time_diff=$((token_expiration_epoch - current_time_epoch))
-
-# Calculate the difference in days
-days_diff=$((time_diff / 86400))
-
-# Check if the token will expire in less than a week (7 days)
-if [ $days_diff -lt 7 ]; then
-  echo "Token will expire in less than a week. Renewing the token..."
-  vault token renew
-  # Copy the token to each user's home folder and update /etc/environment
-  copy_token_to_users
-  update_environment_file
-else
-  echo "Token is valid for more than a week."
-  # Copy the token to each user's home folder and update /etc/environment
-  copy_token_to_users
-  update_environment_file
-fi
+    - name: Start my_service.timer
+      ansible.builtin.systemd:
+        name: my_service.timer
+        state: started
