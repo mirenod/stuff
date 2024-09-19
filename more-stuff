@@ -1,13 +1,10 @@
-    - name: Reload systemd manager configuration
-      ansible.builtin.systemd:
-        daemon_reload: yes
-
-    - name: Enable my_service.timer
-      ansible.builtin.systemd:
-        name: my_service.timer
-        enabled: yes
-
-    - name: Start my_service.timer
-      ansible.builtin.systemd:
-        name: my_service.timer
-        state: started
+update_environment_file() {
+  token=$(cat /root/.vault-token)
+  if grep -q "VAULT_TOKEN" /etc/environment; then
+    # Update the existing token
+    sed -i "s/^VAULT_TOKEN=.*/VAULT_TOKEN=$token/" /etc/environment
+  else
+    # Add the new token
+    echo "VAULT_TOKEN=$token" >> /etc/environment
+  fi
+}
