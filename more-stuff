@@ -1,10 +1,11 @@
-update_environment_file() {
-  token=$(cat /root/.vault-token)
-  if grep -q "VAULT_TOKEN" /etc/environment; then
-    # Update the existing token
-    sed -i "s/^VAULT_TOKEN=.*/VAULT_TOKEN=$token/" /etc/environment
-  else
-    # Add the new token
-    echo "VAULT_TOKEN=$token" >> /etc/environment
-  fi
+copy_token_to_users() {
+  for user_home in /home/*; do
+    if [ -d "$user_home" ]; then
+      user=$(stat -c '%U' "$user_home")
+      group=$(stat -c '%G' "$user_home")
+      cp /root/.vault-token "$user_home/.vault-token"
+      chown "$user:$group" "$user_home/.vault-token"
+      chmod 600 "$user_home/.vault-token"
+    fi
+  done
 }
