@@ -1,0 +1,98 @@
+Create your script: Ensure your script is executable. For example, let’s say your script is named my_script.sh.
+chmod +x /path/to/my_script.sh
+
+Create a systemd service file: Create a new service file in the /etc/systemd/system/ directory. For example, create a file named my_service.service.
+sudo nano /etc/systemd/system/my_service.service
+
+Define the service: Add the following content to the service file:
+[Unit]
+Description=My Custom Service
+After=network.target
+
+[Service]
+ExecStart=/path/to/my_script.sh
+Restart=always
+User=nobody
+Group=nobody
+
+[Install]
+WantedBy=multi-user.target
+
+Description: A brief description of the service.
+After: Specifies the service dependencies.
+ExecStart: The command to start the service (your script).
+Restart: Defines the restart behavior (e.g., always, on-failure).
+User and Group: The user and group under which the service will run.
+WantedBy: Specifies the target to which the service should be attached.
+Reload systemd: Reload the systemd manager configuration to recognize the new service.
+sudo systemctl daemon-reload
+
+Enable the service: Enable the service to start on boot.
+sudo systemctl enable my_service.service
+
+Start the service: Start the service immediately.
+sudo systemctl start my_service.service
+
+Check the status: Verify that the service is running.
+sudo systemctl status my_service.service
+
+By following these steps, you will have created and registered a service on your RHEL server that runs your script.
+
+########################################
+
+- name: Source /etc/environment file
+  hosts: all
+  tasks:
+    - name: Source environment variables
+      shell: |
+        source /etc/environment
+        export $(cat /etc/environment | xargs)
+      args:
+        executable: /bin/bash
+
+In this example:
+
+The shell module is used to run the shell commands.
+The source /etc/environment command sources the environment variables from the file.
+The export $(cat /etc/environment | xargs) command exports the variables to the current shell environment.
+This way, the environment variables from /etc/environment will be available in the current Ansible playbook.
+
+############################
+
+Sure, I can add an if statement at the beginning of the script to check if a token already exists and avoid running vault login again. Here’s the updated script:
+
+#!/bin/bash
+
+# Check if a token already exists
+if vault token lookup &> /dev/null; then
+  echo "Token already exists."
+else
+  # Vault login
+  vault login -method=userpass username=<your-username> password=<your-password>
+fi
+
+# Get the token expiration time
+token_expiration=$(vault token lookup -format=json | jq -r '.data.expire_time')
+
+# Convert token expiration time to seconds since epoch
+token_expiration_epoch=$(date -d "$token_expiration" +%s)
+
+# Get the current time in seconds since epoch
+current_time_epoch=$(date +%s)
+
+# Calculate the difference in seconds
+time_diff=$((token_expiration_epoch - current_time_epoch))
+
+# Calculate the difference in days
+days_diff=$((time_diff / 86400))
+
+# Check if the token will expire in less than a week (7 days)
+if [ $days_diff -lt 7 ]; then
+  echo "Token will expire in less than a week. Renewing the token..."
+  vault token renew
+else
+  echo "Token is valid for more than a week."
+fi
+
+
+
