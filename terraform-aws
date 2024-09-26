@@ -1,0 +1,12 @@
+resource "aws_s3_bucket_lifecycle_configuration" "config_bucket_lifecycle" {
+  bucket = aws_s3_bucket.config_bucket.id
+
+  rule {
+    id     = "delete-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 730 # 2 years
+    }
+  }
+}
