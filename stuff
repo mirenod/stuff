@@ -1,12 +1,28 @@
 #!/bin/bash
-# Generate a complex JSON object dynamically
-json_output=$(jq -n \
-  --arg key1 "value1" \
-  --arg key2 "value2" \
-  --argjson nested '{"nested_key": "nested_value"}' \
-  '{
-    "key1": $key1,
-    "key2": $key2,
-    "nested": $nested
-  }')
-echo $json_output
+
+# Function to check if a secret exists in Vault using Vault CLI
+check_secret_exists() {
+    local secret_path=$1
+
+    # Temporarily disable exit on error
+    set +e
+
+    # Use Vault CLI to check if the secret exists
+    vault kv get "$secret_path" > /dev/null 2>&1
+    local status=$?
+
+    # Re-enable exit on error
+    set -e
+
+    if [ $status -eq 0 ]; then
+        echo "Secret exists."
+        return 0
+    else
+        echo "Secret does not exist."
+        return 1
+    fi
+}
+
+# Example usage
+secret_path="secret/data/mysecret"
+check_secret_exists "$secret_path"
