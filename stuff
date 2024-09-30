@@ -1,28 +1,21 @@
 #!/bin/bash
 
-# Function to check if a secret exists in Vault using Vault CLI
-check_secret_exists() {
-    local secret_path=$1
+USERNAME="<username>"
+THRESHOLD_DAYS=90
 
-    # Temporarily disable exit on error
-    set +e
+# Get the current date in seconds since epoch
+CURRENT_DATE=$(date +%s)
 
-    # Use Vault CLI to check if the secret exists
-    vault kv get "$secret_path" > /dev/null 2>&1
-    local status=$?
-
-    # Re-enable exit on error
-    set -e
-
-    if [ $status -eq 0 ]; then
-        echo "Secret exists."
-        return 0
-    else
-        echo "Secret does not exist."
-        return 1
+# List access keys and their creation dates
+aws iam list-access-keys --user-name $USERNAME --query 'AccessKeyMetadata[*].[AccessKeyId,CreateDate]' --output text | while read -r ACCESS_KEY_ID CREATE_DATE; do
+    # Convert the creation date to seconds since epoch
+    CREATE_DATE_EPOCH=$(date -d $CREATE_DATE +%s)
+    
+    # Calculate the age of the access key in days
+    AGE_DAYS=$(( (CURRENT_DATE - CREATE_DATE_EPOCH) / 86400 ))
+    
+    # Check if the age is greater than the threshold
+    if [ $AGE_DAYS -gt $THRESHOLD_DAYS ]; then
+        echo "Access key $ACCESS_KEY_ID is older than $THRESHOLD_DAYS days."
     fi
-}
-
-# Example usage
-secret_path="secret/data/mysecret"
-check_secret_exists "$secret_path"
+done
