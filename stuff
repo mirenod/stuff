@@ -1,21 +1,54 @@
-#!/bin/bash
+stages:
+  - build
+  - test
+  - deploy
+  - generate
+  - trigger
 
-USERNAME="<username>"
-THRESHOLD_DAYS=90
+# build_job:
+#   stage: build
+#   script:
+#     - echo "Building the project..."
 
-# Get the current date in seconds since epoch
-CURRENT_DATE=$(date +%s)
+# test_job:
+#   stage: test
+#   script:
+#     - echo "Running tests..."
 
-# List access keys and their creation dates
-aws iam list-access-keys --user-name $USERNAME --query 'AccessKeyMetadata[*].[AccessKeyId,CreateDate]' --output text | while read -r ACCESS_KEY_ID CREATE_DATE; do
-    # Convert the creation date to seconds since epoch
-    CREATE_DATE_EPOCH=$(date -d $CREATE_DATE +%s)
-    
-    # Calculate the age of the access key in days
-    AGE_DAYS=$(( (CURRENT_DATE - CREATE_DATE_EPOCH) / 86400 ))
-    
-    # Check if the age is greater than the threshold
-    if [ $AGE_DAYS -gt $THRESHOLD_DAYS ]; then
-        echo "Access key $ACCESS_KEY_ID is older than $THRESHOLD_DAYS days."
-    fi
-done
+# deploy_job:
+#   stage: deploy
+#   script:
+#     - echo "Deploying the project..."
+
+generate_child_pipeline:
+  stage: generate
+  script:
+    - |
+      cat <<EOT > child-pipeline.yml
+      stages:
+        - child_build
+        - child_test
+
+      child_build_job:
+        stage: child_build
+        script:
+          - echo "Building the child project..."
+
+      child_test_job:
+        stage: child_test
+        script:
+          - echo "Running child tests..."
+      EOT
+  artifacts:
+    paths:
+      - child-pipeline.yml
+
+trigger_child_pipeline:
+  stage: trigger
+  needs:
+    - generate_child_pipeline
+  trigger:
+    include: 
+      - artifact: child-pipeline.yml
+        job: generate_child_pipeline
+    strategy: depend
