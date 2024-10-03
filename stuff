@@ -1,20 +1,43 @@
+To generate a certificate for your server using Vault CLI and install it, you can follow these steps:
+
+Authenticate with Vault: Ensure you are authenticated with Vault using the appropriate method (e.g., AWS IAM, token, etc.).
+Generate a Certificate: Use the Vault CLI to generate a certificate. Here is an example command to generate a certificate:
+vault write pki_int/issue/example-dot-com common_name="your-server.example.com" ttl="24h"
+
+Replace pki_int/issue/example-dot-com with the appropriate path to your PKI role, and your-server.example.com with your server’s domain name.
+Save the Certificate and Key: Save the generated certificate and key to files. You can use the following script to do this:
 #!/bin/bash
-# Update the system
-yum update -y
 
-# Install Nginx
-yum install -y nginx
+# Generate certificate
+CERT_DATA=$(vault write -format=json pki_int/issue/example-dot-com common_name="your-server.example.com" ttl="24h")
 
-# Start Nginx service
-systemctl start nginx
+# Extract certificate and key
+CERT=$(echo $CERT_DATA | jq -r '.data.certificate')
+KEY=$(echo $CERT_DATA | jq -r '.data.private_key')
+CA_CHAIN=$(echo $CERT_DATA | jq -r '.data.ca_chain[]')
 
-# Enable Nginx to start on boot
-systemctl enable nginx
+# Save to files
+echo "$CERT" > /etc/ssl/certs/your-server.crt
+echo "$KEY" > /etc/ssl/private/your-server.key
+echo "$CA_CHAIN" > /etc/ssl/certs/ca.crt
 
-# Create a simple HTML page
-echo "<html><body><h1>Hello from Nginx on AWS EC2!</h1></body></html>" > /usr/share/nginx/html/index.html
+Ensure you have jq installed to parse the JSON output.
+Install the Certificate: Configure Nginx to use the generated certificate. Update your Nginx configuration file (e.g., /etc/nginx/nginx.conf or a specific site configuration file) to include the following:
+server {
+    listen 443 ssl;
+    server_name your-server.example.com;
 
-# Configure firewall to allow HTTP and HTTPS traffic
-firewall-cmd --permanent --add-service=http
-firewall-cmd --permanent --add-service=https
-firewall-cmd --reload
+    ssl_certificate /etc/ssl/certs/your-server.crt;
+    ssl_certificate_key /etc/ssl/private/your-server.key;
+    ssl_trusted_certificate /etc/ssl/certs/ca.crt;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+    }
+}
+
+Restart Nginx: Restart the Nginx service to apply the changes:
+systemctl restart nginx
+
+This process will generate a certificate using Vault, save it to the appropriate files, and configure Nginx to use the certificate for HTTPS connections.
