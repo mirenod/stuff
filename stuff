@@ -1,1 +1,2 @@
 docker run --rm --volume "$(pwd):/workspace" -w /workspace -e INPUT_DIR=/workspace -e OUTPUT_FILE=README.md quay.io/terraform-docs/terraform-docs:latest markdown table
+docker run --rm --volume "$(pwd):/workspace" -w /workspace quay.io/terraform-docs/terraform-docs:latest terraform-docs markdown table --output-file README.md --output-mode inject .
