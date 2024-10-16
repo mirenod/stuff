@@ -1,55 +1,7 @@
-for file in *.txt; do
-  gpg --output "${file}.gpg" --encrypt --recipient john.doe@example.com "$file"
-done
+stages:
+  - test
 
-
-
-for file in *.gpg; do
-  gpg --output "${file%.gpg}" --decrypt "$file"
-done
-
-
-# Step 0: compress the file
-gzip largefile.dat
-split -b 500M largefile.dat.gz part_
-
-
-# Step 1: Split the Large File on Server B
-split -b 500M largefile.dat part_
-
-# Step 2: Encrypt Each Part Individually
-for file in part_*; do
-    gpg --output "${file}.gpg" --encrypt --recipient 'Your Name' "$file"
-done
-
-# Step 3: Transfer the Encrypted Parts to Server A
-scp part_*.gpg user@serverA:/path/to/destination/
-
-
-# Step 4: Decrypt the Encrypted Parts on Server A
-for file in part_*.gpg; do
-    gpg --output "${file%.gpg}" --decrypt "$file"
-done
-
-# Step 5: Reassemble the Original File on Server A
-cat part_* > largefile_reassembled.dat
-
-# Step 6: Verify the Integrity of the Reassembled File
-# On Server B: Generate a Checksum Before Splitting
-sha256sum largefile.dat > largefile.sha256
-scp largefile.sha256 user@serverA:/path/to/destination/
-# A: Verify the Checksum; The file must have the original name.
-sha256sum -c largefile.sha256
-#  largefile.dat: OK
-
-
-# Delete files in Server B
-rm part_*
-rm part_*.gpg
-
-
-# Other
-# rar or zip: These tools can split archives and include integrity checks.
-zip -s 500m largefile.zip largefile.dat
-# tar with Split: Combine tar and split for archiving directories.
-tar -cf - directory/ | split -b 500M - part_
+test-job:
+  stage: test
+  script:
+    - echo "This is a test job"
