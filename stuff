@@ -1,7 +1,24 @@
-stages:
-  - test
+#!/bin/bash
 
-test-job:
-  stage: test
-  script:
-    - echo "This is a test job"
+# Assume the variable is passed as the first argument
+variable=$1
+
+# Define the set of acceptable values
+acceptable_values=("value1" "value2" "value3")
+
+# Check if the variable is in the acceptable set
+found=false
+for val in "${acceptable_values[@]}"; do
+    if [[ "$variable" == "$val" ]]; then
+        found=true
+        break
+    fi
+done
+
+# Display the result
+if $found; then
+    echo "Variable is within the acceptable set of values."
+else
+    echo "Variable is not in the set of acceptable values."
+    echo "Possible values are: ${acceptable_values[*]}"
+fi
