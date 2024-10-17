@@ -1,43 +1,14 @@
 #!/bin/bash
 
-# Function to display help
-function show_help {
-    echo "Usage: $0 [-f|--first FIRST_NAME] [-s|--last LAST_NAME] [-a|--age AGE] [--] [ADDITIONAL_PARAMETERS]"
-    echo ""
-    echo "Options:"
-    echo "  -f, --first      Specify the first name."
-    echo "  -s, --last       Specify the last name."
-    echo "  -a, --age        Specify the age (default: 20)."
-    echo "  -h, --help       Show this help message."
-    echo ""
-    echo "Examples:"
-    echo "  $0 -f John -s Doe"
-    echo "  $0 -f John -s Doe -- --param1 value1 --param2 value2"
-    exit 0
-}
+# Assume the variable is passed as the first argument
+variable=$1
 
-# Loop through the provided arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -f|--first) first_name="$2" # Store the first name argument
-            shift;;
-        -s|--last) last_name="$2" # Store the last name argument
-            shift;;
-        -a|--age) age=20;; # Set the default age value
-        -h|--help) show_help;; # Display help and exit
-        --) shift; break;; # End of known options
-        *) echo "Unknown parameter passed: $1" # Display error for unknown parameter
-            exit 1;; # Exit the script with an error code
-    esac
-    shift # Move to the next argument
-done
+# Define the set of acceptable values
+acceptable_values=("value1" "value2" "value3")
 
-# Remaining arguments after -- are the additional parameters
-additional_params="$@"
-
-# Display the collected information
-echo "Full name: $first_name $last_name, Age: $age"
-echo "Additional parameters: $additional_params"
-
-# Pass the additional parameters to your command
-your_command $additional_params
+# Check if the variable is in the acceptable set
+if [[ ! " ${acceptable_values[@]} " =~ " ${variable} " ]]; then
+    echo "Variable is not in the set of acceptable values."
+    echo "Possible values are: ${acceptable_values[*]}"
+    exit 1
+fi
