@@ -90,3 +90,20 @@ if [ -z "$AWS_ACCESS_KEY_ID" ]; then
   echo "Failed to load AWS credentials."
   exit 1
 fi
+
+
+#!/bin/bash
+
+file_path="your_file.txt"
+
+# Check if the file exists and is not empty
+if [[ -f "$file_path" && -s "$file_path" ]]; then
+    # Check if the file contains only empty lines
+    if [[ ! $(grep -v '^[[:space:]]*$' "$file_path") ]]; then
+        echo "File exists but contains only empty lines."
+    else
+        echo "File exists and is not empty."
+    fi
+else
+    echo "File does not exist or is empty."
+
