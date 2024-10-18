@@ -107,3 +107,16 @@ if [[ -f "$file_path" && -s "$file_path" ]]; then
 else
     echo "File does not exist or is empty."
 
+
+
+
+#!/bin/bash
+
+file_path="your_file.txt"
+
+if [[ -f "$file_path" && -s "$file_path" && $(grep -vq '^[[:space:]]*$' "$file_path") ]]; then
+    echo "File exists and is not empty."
+else
+    echo "File does not exist or is empty."
+fi
+
