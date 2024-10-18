@@ -80,11 +80,13 @@ function docker_run_get_exported_env_vars_in_script {
 docker run $(docker_run_get_exported_env_vars_in_script) -it registry.gitlab.com/mirenod/image-deployment-tools-light:main sh
 
 
-
-# Load environment variables from aws-vault
-eval $(aws-vault exec $AWS_PROFILE -- env | grep -E 'AWS_')
+# Load environment variables from aws-vault and export them
+while IFS= read -r line; do
+  export "$line"
+done < <(aws-vault exec $AWS_PROFILE -- env | grep -E 'AWS_')
 
 # Check if AWS credentials are loaded
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
   echo "Failed to load AWS credentials."
   exit 1
+fi
