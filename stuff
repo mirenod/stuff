@@ -1,14 +1,80 @@
 #!/bin/bash
 
-# Assume the variable is passed as the first argument
-variable=$1
+# This script demonstrates how to parse command line arguments and load environment variables from a .env file. For isolation and to avoid side effects, the script will run a Docker containers with the environment variables that are exported in the script and not in the initial environment variables. If you need to add a new environment variable, you can add it to the .env file and export it in the script. The script will automatically load the new environment variable and run the Docker container with the new environment variables.
 
-# Define the set of acceptable values
-acceptable_values=("value1" "value2" "value3")
 
-# Check if the variable is in the acceptable set
-if [[ ! " ${acceptable_values[@]} " =~ " ${variable} " ]]; then
-    echo "Variable is not in the set of acceptable values."
-    echo "Possible values are: ${acceptable_values[*]}"
-    exit 1
-fi
+# Capture initial environment variables
+initial_env=$(env | sort)
+
+
+# Function to display help
+function show_help {
+    echo "Usage: $0 [-f|--first FIRST_NAME] [-s|--last LAST_NAME] [-a|--age AGE] [--] [ADDITIONAL_PARAMETERS]"
+    echo ""
+    echo "Options:"
+    echo "  -f, --first      Specify the first name."
+    echo "  -s, --last       Specify the last name (default: Doe)."
+    echo "  -a, --age        Specify the age (default: 20)."
+    echo "  -h, --help       Show this help message."
+    echo ""
+    echo "Examples:"
+    echo "  $0 -f John -s Doe"
+    echo "  $0 -f John -s Doe -- --param1 value1 --param2 value2"
+    exit 0
+}
+
+# Set default values
+age=20
+
+# Loop through the provided arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -f|--first) first_name="$2" # Store the first name argument
+            shift;;
+        -s|--last) last_name="$2" # Store the last name argument
+            shift;;
+        -a|--age) age="$2"
+            shift;;
+        -h|--help) show_help
+          shift;; # Display help and exit
+        --) shift; break;; # End of known options
+        *) echo "Unknown parameter passed: $1" # Display error for unknown parameter
+            exit 1;; # Exit the script with an error code
+    esac
+    shift # Move to the next argument
+done
+
+# Remaining arguments after -- are the additional parameters
+additional_params=("$@")
+additional_params=("${additional_params[@]:1}")
+
+# Display the collected information
+echo "Full name: $first_name $last_name, Age: $age"
+echo "Additional parameters: ${additional_params[@]}"
+
+
+# Load environment variables from .env file
+set -o allexport
+source .env
+set +o allexport
+
+export MY_VAR_5="value_5"
+
+# This function will return the environment variables that are exported in the script and not in the initial environment variables. The output is in the format --env VAR1=VALUE1 --env VAR2=VALUE2, ready to be used in the Docker run command.
+function docker_run_get_exported_env_vars_in_script {
+  current_env=$(env | sort)
+  
+  # Find environment variables that are in current_env but not in initial_env, using comm that compares sorted files FILE1 and FILE2 line by line.
+  new_env_vars=$(comm -13 <(echo "$initial_env") <(echo "$current_env"))
+
+  # Prepare environment variables for Docker run command.
+  env_vars=""
+  while IFS= read -r line; do
+    env_vars="$env_vars --env $line"
+  done <<< "$new_env_vars"
+  echo $env_vars
+}
+
+
+# Run Docker container with all new environment variables
+docker run $(docker_run_get_exported_env_vars_in_script) -it registry.gitlab.com/mirenod/image-deployment-tools-light:main sh
