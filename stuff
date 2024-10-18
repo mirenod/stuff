@@ -120,3 +120,14 @@ else
     echo "File does not exist or is empty."
 fi
 
+
+vault_token="$1"
+
+# Regular expression to check Vault token
+regex='^hvs\.[A-Za-z0-9_]{8,}$'
+
+if [[ $vault_token =~ $regex ]]; then
+    echo "Valid Vault token."
+else
+    echo "Invalid Vault token."
+fi
