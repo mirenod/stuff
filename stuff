@@ -1,3 +1,7 @@
+ apt-get install -y curl && \
+    curl --proto 'https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    rm -rf /var/lib/apt/lists/*
+
 #!/bin/bash
 
 # This script demonstrates how to parse command line arguments and load environment variables from a .env file. For isolation and to avoid side effects, the script will run a Docker containers with the environment variables that are exported in the script and not in the initial environment variables. If you need to add a new environment variable, you can add it to the .env file and export it in the script. The script will automatically load the new environment variable and run the Docker container with the new environment variables.
