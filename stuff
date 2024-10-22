@@ -1,137 +1,56 @@
- apt-get install -y curl && \
-    curl --proto 'https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    rm -rf /var/lib/apt/lists/*
-
 #!/bin/bash
 
-# This script demonstrates how to parse command line arguments and load environment variables from a .env file. For isolation and to avoid side effects, the script will run a Docker containers with the environment variables that are exported in the script and not in the initial environment variables. If you need to add a new environment variable, you can add it to the .env file and export it in the script. The script will automatically load the new environment variable and run the Docker container with the new environment variables.
+# Variables (Please customize these)
+USERNAME="your_username"
+GROUPNAME="your_groupname"
+PUBLIC_KEY_CONTENT="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD..."  # Replace with your actual public key
+DATA_DIRECTORY="/data"
 
-
-# Capture initial environment variables
-initial_env=$(env | sort)
-
-
-# Function to display help
-function show_help {
-    echo "Usage: $0 [-f|--first FIRST_NAME] [-s|--last LAST_NAME] [-a|--age AGE] [--] [ADDITIONAL_PARAMETERS]"
-    echo ""
-    echo "Options:"
-    echo "  -f, --first      Specify the first name."
-    echo "  -s, --last       Specify the last name (default: Doe)."
-    echo "  -a, --age        Specify the age (default: 20)."
-    echo "  -h, --help       Show this help message."
-    echo ""
-    echo "Examples:"
-    echo "  $0 -f John -s Doe"
-    echo "  $0 -f John -s Doe -- --param1 value1 --param2 value2"
-    exit 0
-}
-
-# Set default values
-age=20
-
-# Loop through the provided arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -f|--first) first_name="$2" # Store the first name argument
-            shift;;
-        -s|--last) last_name="$2" # Store the last name argument
-            shift;;
-        -a|--age) age="$2"
-            shift;;
-        -h|--help) show_help
-          shift;; # Display help and exit
-        --) shift; break;; # End of known options
-        *) echo "Unknown parameter passed: $1" # Display error for unknown parameter
-            exit 1;; # Exit the script with an error code
-    esac
-    shift # Move to the next argument
-done
-
-# Remaining arguments after -- are the additional parameters
-additional_params=("$@")
-additional_params=("${additional_params[@]:1}")
-
-# Display the collected information
-echo "Full name: $first_name $last_name, Age: $age"
-echo "Additional parameters: ${additional_params[@]}"
-
-
-# Load environment variables from .env file
-set -o allexport
-source .env
-set +o allexport
-
-export MY_VAR_5="value_5"
-
-# This function will return the environment variables that are exported in the script and not in the initial environment variables. The output is in the format --env VAR1=VALUE1 --env VAR2=VALUE2, ready to be used in the Docker run command.
-function docker_run_get_exported_env_vars_in_script {
-  current_env=$(env | sort)
-  
-  # Find environment variables that are in current_env but not in initial_env, using comm that compares sorted files FILE1 and FILE2 line by line.
-  new_env_vars=$(comm -13 <(echo "$initial_env") <(echo "$current_env"))
-
-  # Prepare environment variables for Docker run command.
-  env_vars=""
-  while IFS= read -r line; do
-    env_vars="$env_vars --env $line"
-  done <<< "$new_env_vars"
-  echo $env_vars
-}
-
-
-# Run Docker container with all new environment variables
-docker run $(docker_run_get_exported_env_vars_in_script) -it registry.gitlab.com/mirenod/image-deployment-tools-light:main sh
-
-
-# Load environment variables from aws-vault and export them
-while IFS= read -r line; do
-  export "$line"
-done < <(aws-vault exec $AWS_PROFILE -- env | grep -E 'AWS_')
-
-# Check if AWS credentials are loaded
-if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-  echo "Failed to load AWS credentials."
-  exit 1
+# Create the group if it doesn't exist
+if getent group "$GROUPNAME" >/dev/null 2>&1; then
+    echo "Group '$GROUPNAME' already exists."
+else
+    groupadd "$GROUPNAME"
+    echo "Group '$GROUPNAME' has been created."
 fi
 
-
-#!/bin/bash
-
-file_path="your_file.txt"
-
-# Check if the file exists and is not empty
-if [[ -f "$file_path" && -s "$file_path" ]]; then
-    # Check if the file contains only empty lines
-    if [[ ! $(grep -v '^[[:space:]]*$' "$file_path") ]]; then
-        echo "File exists but contains only empty lines."
-    else
-        echo "File exists and is not empty."
-    fi
+# Create the user if it doesn't exist
+if id "$USERNAME" >/dev/null 2>&1; then
+    echo "User '$USERNAME' already exists."
 else
-    echo "File does not exist or is empty."
-
-
-
-
-#!/bin/bash
-
-file_path="your_file.txt"
-
-if [[ -f "$file_path" && -s "$file_path" && $(grep -vq '^[[:space:]]*$' "$file_path") ]]; then
-    echo "File exists and is not empty."
-else
-    echo "File does not exist or is empty."
+    useradd -m -g "$GROUPNAME" -s /bin/bash "$USERNAME"
+    echo "User '$USERNAME' has been created and added to group '$GROUPNAME'."
 fi
 
+# Ensure the user account does not expire
+chage -M -1 "$USERNAME"
+echo "User '$USERNAME' account set to never expire."
 
-vault_token="$1"
+# Set up SSH keys for passwordless access
+USER_HOME_DIRECTORY="/home/$USERNAME"
+SSH_DIR="$USER_HOME_DIRECTORY/.ssh"
+AUTHORIZED_KEYS="$SSH_DIR/authorized_keys"
 
-# Regular expression to check Vault token
-regex='^hvs\.[A-Za-z0-9_]{8,}$'
+mkdir -p "$SSH_DIR"
+chmod 700 "$SSH_DIR"
 
-if [[ $vault_token =~ $regex ]]; then
-    echo "Valid Vault token."
+echo "$PUBLIC_KEY_CONTENT" > "$AUTHORIZED_KEYS"
+chmod 600 "$AUTHORIZED_KEYS"
+
+chown -R "$USERNAME":"$GROUPNAME" "$USER_HOME_DIRECTORY"
+echo "SSH public key configured for user '$USERNAME'."
+
+# Grant permissions to /data
+if [ -d "$DATA_DIRECTORY" ]; then
+    chown "$USERNAME":"$GROUPNAME" "$DATA_DIRECTORY"
+    chmod 750 "$DATA_DIRECTORY"
+    echo "Permissions set on '$DATA_DIRECTORY' for user '$USERNAME'."
 else
-    echo "Invalid Vault token."
+    echo "Directory '$DATA_DIRECTORY' does not exist. Creating it now."
+    mkdir -p "$DATA_DIRECTORY"
+    chown "$USERNAME":"$GROUPNAME" "$DATA_DIRECTORY"
+    chmod 750 "$DATA_DIRECTORY"
+    echo "Directory '$DATA_DIRECTORY' created and permissions set."
 fi
+
+echo "All tasks completed successfully!"
