@@ -1,56 +1,12 @@
 #!/bin/bash
 
-# Variables (Please customize these)
-USERNAME="your_username"
-GROUPNAME="your_groupname"
-PUBLIC_KEY_CONTENT="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD..."  # Replace with your actual public key
-DATA_DIRECTORY="/data"
+# Initialize the Kaniko command
+kaniko_cmd="/kaniko/executor --context /path/to/context --dockerfile /path/to/dockerfile --destination your-registry/your-image:tag"
 
-# Create the group if it doesn't exist
-if getent group "$GROUPNAME" >/dev/null 2>&1; then
-    echo "Group '$GROUPNAME' already exists."
-else
-    groupadd "$GROUPNAME"
-    echo "Group '$GROUPNAME' has been created."
-fi
+# Extract and add each build argument from the BUILD_ARGS environment variable
+for arg in $BUILD_ARGS; do
+  kaniko_cmd+=" --build-arg $arg"
+done
 
-# Create the user if it doesn't exist
-if id "$USERNAME" >/dev/null 2>&1; then
-    echo "User '$USERNAME' already exists."
-else
-    useradd -m -g "$GROUPNAME" -s /bin/bash "$USERNAME"
-    echo "User '$USERNAME' has been created and added to group '$GROUPNAME'."
-fi
-
-# Ensure the user account does not expire
-chage -M -1 "$USERNAME"
-echo "User '$USERNAME' account set to never expire."
-
-# Set up SSH keys for passwordless access
-USER_HOME_DIRECTORY="/home/$USERNAME"
-SSH_DIR="$USER_HOME_DIRECTORY/.ssh"
-AUTHORIZED_KEYS="$SSH_DIR/authorized_keys"
-
-mkdir -p "$SSH_DIR"
-chmod 700 "$SSH_DIR"
-
-echo "$PUBLIC_KEY_CONTENT" > "$AUTHORIZED_KEYS"
-chmod 600 "$AUTHORIZED_KEYS"
-
-chown -R "$USERNAME":"$GROUPNAME" "$USER_HOME_DIRECTORY"
-echo "SSH public key configured for user '$USERNAME'."
-
-# Grant permissions to /data
-if [ -d "$DATA_DIRECTORY" ]; then
-    chown "$USERNAME":"$GROUPNAME" "$DATA_DIRECTORY"
-    chmod 750 "$DATA_DIRECTORY"
-    echo "Permissions set on '$DATA_DIRECTORY' for user '$USERNAME'."
-else
-    echo "Directory '$DATA_DIRECTORY' does not exist. Creating it now."
-    mkdir -p "$DATA_DIRECTORY"
-    chown "$USERNAME":"$GROUPNAME" "$DATA_DIRECTORY"
-    chmod 750 "$DATA_DIRECTORY"
-    echo "Directory '$DATA_DIRECTORY' created and permissions set."
-fi
-
-echo "All tasks completed successfully!"
+# Execute the Kaniko command
+eval $kaniko_cmd
