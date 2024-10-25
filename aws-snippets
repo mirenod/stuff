@@ -1,8 +1,0 @@
-# Retrieve the base64 encoded user_data
-encoded_user_data=$(aws ec2 describe-launch-template-versions --launch-template-id lt-0abcd1234efgh5678 --versions 1 --query 'LaunchTemplateVersions[0].LaunchTemplateData.UserData' --output text)
-
-# Decode the user_data
-decoded_user_data=$(echo "$encoded_user_data" | base64 --decode)
-
-# Print the decoded user_data
-echo "$decoded_user_data"

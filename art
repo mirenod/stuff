@@ -1,6 +1,0 @@
-curl -u your-username:your-password -X POST "https://your-artifactory-url/artifactory/api/search/aql" -H "Content-Type: text/plain" -d '
-items.find({
-  "repo": "your-repo-name",
-  "path": {"$match": "your/path/**"}
-}).include("name", "repo", "path", "size", "created", "modified")
-'
