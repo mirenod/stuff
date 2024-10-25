@@ -2,7 +2,9 @@
 set -eu
 exec 3>&2
 
-# Read JSON file and parse options
+# This function will dynamically generate a select menu based on the options provided.
+# The options are passed like this:
+# select_menu_dynamic "$(jq -r '.options[]' options.json)"
 select_menu_dynamic() {
   set +eu
   local options="$1"$'\nQuit'
