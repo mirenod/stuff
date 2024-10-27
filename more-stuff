@@ -9,3 +9,20 @@ copy_token_to_users() {
     fi
   done
 }
+
+#!/bin/bash
+
+# Function to update JSON property
+update_json_property() {
+  local json_file=$1
+  local property=$2
+  local new_value=$3
+
+  jq --arg property "$property" --arg new_value "$new_value" '.[$property] = $new_value' "$json_file" > tmp.$$.json && mv tmp.$$.json "$json_file"
+}
+
+# Usage example
+json_file="example.json"
+update_json_property "$json_file" "name" "New Name"
+update_json_property "$json_file" "age" "30"
+
