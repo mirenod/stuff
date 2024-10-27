@@ -1,8 +1,9 @@
 #!/bin/bash
 
 compare_versions() {
-    local version1=$1
-    local version2=$2
+    # Strip the 'v' prefix
+    local version1=${1#v}
+    local version2=${2#v}
 
     if [[ "$version1" == "$version2" ]]; then
         echo "Versions are equal"
@@ -13,15 +14,15 @@ compare_versions() {
     highest_version=$(echo -e "$version1\n$version2" | sort -V | tail -n 1)
 
     if [[ "$highest_version" == "$version1" ]]; then
-        echo "$version1 is higher"
+        echo "$1 is higher"
     else
-        echo "$version2 is higher"
+        echo "$2 is higher"
     fi
 }
 
 # Example usage
-version1="1.2.3"
-version2="1.3.0"
+version1="v1.2.3"
+version2="v1.3.0"
 compare_versions $version1 $version2
 
 
