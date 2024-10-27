@@ -26,3 +26,16 @@ json_file="example.json"
 update_json_property "$json_file" "name" "New Name"
 update_json_property "$json_file" "age" "30"
 
+
+#!/bin/bash
+
+# Variable name to check
+VAR_NAME="MY_VARIABLE"
+
+# Check if the variable is set and has a value
+if [ -z ${!VAR_NAME+x} ]; then
+    echo "$VAR_NAME is not set"
+else
+    echo "$VAR_NAME is set with value: ${!VAR_NAME}"
+fi
+
