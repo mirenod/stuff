@@ -1,3 +1,14 @@
+unset_env_vars() {
+    for var in $(env | grep -E '^TF_|^VAULT_|^AWS_' | awk -F= '{print $1}'); do
+        unset $var
+    done
+}
+
+# Call the function
+unset_env_vars
+
+
+
 #!/bin/bash
 
 compare_versions() {
