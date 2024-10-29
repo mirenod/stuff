@@ -1,12 +1,22 @@
 #!/bin/bash
 
-# Initialize the Kaniko command
-kaniko_cmd="/kaniko/executor --context /path/to/context --dockerfile /path/to/dockerfile --destination your-registry/your-image:tag"
+# Current environment
+current_environment="test"
 
-# Extract and add each build argument from the BUILD_ARGS environment variable
-for arg in $BUILD_ARGS; do
-  kaniko_cmd+=" --build-arg $arg"
+# Extract ignore_environment value using yq
+ignore_env=$(yq e '.ignore_environment[]' your_file.yml)
+
+# Convert to array
+IFS=$'\n' read -r -d '' -a ignore_env_array < <(echo "$ignore_env"$'\0')
+
+# Check if current environment is in ignore_env_array
+for env in "${ignore_env_array[@]}"; do
+    if [[ "$env" == "$current_environment" ]]; then
+        echo "Skipping part of the script because the current environment is $current_environment."
+        exit 0  # Skip the rest of the script
+    fi
 done
 
-# Execute the Kaniko command
-eval $kaniko_cmd
+# Continue with the rest of your script
+echo "Continuing with the script..."
+# Place the rest of your script here
