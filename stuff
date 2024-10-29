@@ -1,3 +1,13 @@
+
+
+#!/bin/bash
+
+if [ -n "$CI_JOB_ID" ]; then
+    echo "This script is running in a GitLab CI/CD job."
+else
+    echo "This script is not running in a GitLab CI/CD job."
+fi
+
 #!/bin/bash
 
 # Current environment
