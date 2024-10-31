@@ -1,3 +1,26 @@
+#!/bin/bash
+
+# Directory containing the files
+directory="/path/to/your/folder"
+
+# Output file for checksums
+output_file="checksums.txt"
+
+# Empty the output file if it exists
+> "$output_file"
+
+# Calculate checksums and print to the output file
+for file in "$directory"/*; do
+    if [ -f "$file" ]; then
+        sha256sum "$file" >> "$output_file"
+    fi
+done
+
+echo "Checksums have been written to $output_file"
+
+
+
+
 unset_env_vars() {
     for var in $(env | grep -E '^TF_|^VAULT_|^AWS_' | awk -F= '{print $1}'); do
         unset $var
