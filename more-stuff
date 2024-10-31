@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Directory containing the split files
+directory="/path/to/your/folder"
+
+# Iterate over each gzipped part file in the directory
+for gz_part in "$directory"/*.gz.part-*; do
+    # Extract the base file name without the part suffix
+    base_name=$(basename "$gz_part" | sed 's/\.gz\.part-.*$//')
+
+    # Combine the split parts into a single gz file
+    cat "$directory/$base_name".gz.part-* > "$directory/$base_name".gz
+
+    # Unarchive the combined gz file
+    gunzip "$directory/$base_name".gz
+done
+
+echo "All files have been combined and unarchived."
+
+
+
+
+#!/bin/bash
+
 # Directory containing the files
 directory="/path/to/your/folder"
 
