@@ -1,3 +1,64 @@
+Connect to RDS Oracle Instance:
+
+Use tools like SQLPlus*, SQL Developer, or another SQL client.
+
+Check Mounted File Systems:
+
+sql
+SELECT * FROM rdsadmin.rds_file_util.listdir('/rdsdbdata/efs');
+This should list the contents of your EFS directory.
+
+4. Use UTL_FILE to Read and Write Files
+Create a Directory Object in Oracle:
+
+sql
+CREATE OR REPLACE DIRECTORY efs_dir AS '/rdsdbdata/efs';
+This directory object points to the EFS mount point.
+
+Grant Permissions:
+
+sql
+GRANT READ, WRITE ON DIRECTORY efs_dir TO your_user;
+Read from EFS:
+
+sql
+DECLARE
+  file UTL_FILE.FILE_TYPE;
+  line VARCHAR2(1000);
+BEGIN
+  file := UTL_FILE.FOPEN('EFS_DIR', 'your_file.txt', 'R');
+  LOOP
+    UTL_FILE.GET_LINE(file, line);
+    DBMS_OUTPUT.PUT_LINE(line);
+  END LOOP;
+  UTL_FILE.FCLOSE(file);
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    UTL_FILE.FCLOSE(file);
+END;
+/
+Write to EFS:
+
+sql
+DECLARE
+  file UTL_FILE.FILE_TYPE;
+BEGIN
+  file := UTL_FILE.FOPEN('EFS_DIR', 'output.txt', 'W');
+  UTL_FILE.PUT_LINE(file, 'Hello, EFS from RDS Oracle!');
+  UTL_FILE.FCLOSE(file);
+END;
+/
+
+
+
+
+
+
+
+
+
+
+
 
 
 #!/bin/bash
