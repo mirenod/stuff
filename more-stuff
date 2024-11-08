@@ -1,4 +1,5 @@
-Example inventory.ini:
+fatal: [aws_instance]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: Authorized uses only. All activity may be monitored and reported.\nPermission denied (publickey,gssapi-keyex,gssapi-with-mic).", "unreachable": true}
+xample inventory.ini:
 
 ini
 [myservers]
