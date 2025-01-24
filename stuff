@@ -1,18 +1,64 @@
-sudo ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+To enhance your experience when running Fedora 41 on Hyper-V, enabling Enhanced Session Mode (ESM) is highly recommended. ESM provides features such as dynamic desktop resizing, clipboard sharing, and improved device support, leading to a more seamless integration between the host and guest systems. Here's a step-by-step guide to configure Fedora 41 for Enhanced Session Mode:
 
+1. Install Necessary Packages:
 
-Create a Template File: Let's say you have a template file template.txt with the following content:
-
-Hello, my name is {{NAME}}.
-I am {{AGE}} years old.
-Create a Bash Script: Create a bash script replace_variables.sh to replace the placeholders with actual values:
+Begin by installing the hyperv-tools, xrdp, and xrdp-selinux packages. The hyperv-tools package contains tools and scripts useful for Hyper-V guests. 
+PACKAGES.FEDORAPROJECT.ORG
 
 bash
-#!/bin/bash
+Copy
+Edit
+sudo dnf install hyperv-tools xrdp xrdp-selinux
+2. Configure xRDP:
 
-# Define the variables
-NAME="John"
-AGE="30"
+Modify the /etc/xrdp/xrdp.ini file to set up xrdp for communication over the Virtual Socket (vsock) and adjust security settings for optimal performance within a local environment.
 
-# Use sed to replace the placeholders in the template file
-sed -e "s/{{NAME}}/$NAME/g" -e "s/{{AGE}}/$AGE/g" template.txt > 
+bash
+Copy
+Edit
+sudo sed -i 's/port=3389/port=vsock:\/\/-1:3389/' /etc/xrdp/xrdp.ini
+sudo sed -i 's/security_layer=negotiate/security_layer=rdp/' /etc/xrdp/xrdp.ini
+sudo sed -i 's/crypt_level=high/crypt_level=none/' /etc/xrdp/xrdp.ini
+sudo sed -i 's/bitmap_compression=true/bitmap_compression=false/' /etc/xrdp/xrdp.ini
+3. Enable and Start xRDP Services:
+
+Configure xrdp and its session manager to start immediately and on system boot.
+
+bash
+Copy
+Edit
+sudo systemctl enable --now xrdp
+sudo systemctl enable --now xrdp-sesman
+4. Adjust Firewall Settings:
+
+Open the necessary port for xrdp to allow connections.
+
+bash
+Copy
+Edit
+sudo firewall-cmd --add-port=3389/tcp --permanent
+sudo firewall-cmd --reload
+5. Configure Hyper-V Enhanced Session Mode:
+
+Shut down your Fedora virtual machine. On the Windows host, open an elevated PowerShell prompt and set the Enhanced Session Transport Type to HvSocket for your VM. Replace <VM_NAME> with the name of your virtual machine.
+
+powershell
+Copy
+Edit
+Set-VM -VMName <VM_NAME> -EnhancedSessionTransportType HvSocket
+To confirm the setting:
+
+powershell
+Copy
+Edit
+Get-VM <VM_NAME> | Select-Object EnhancedSessionTransportType
+The output should display HvSocket as the transport type.
+
+6. Start the Virtual Machine:
+
+Power on your Fedora VM. You should now be prompted to select your desired display resolution, indicating that Enhanced Session Mode is active. Log in using your Fedora credentials.
+
+By following these steps, you should experience improved integration and usability when running Fedora 41 on Hyper-V. For a detailed walkthrough, you can refer to Matthew Sanabria's guide on configuring Hyper-V Enhanced Session Mode with Fedora. 
+MATTHEW SANABRIA
+
+For a visual demonstration, you might find this video helpful:
